@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "C:\\Users\\xiang\\Desktop\\n\\AIBeauty\\sdk\\libcxx_helper\\CMakeLists.txt",
+    "F:\\AndroidSDK\\ndk\\21.3.6528147\\build\\cmake\\android.toolchain.cmake",
+    "F:\\AndroidSDK\\ndk\\21.3.6528147\\build\\cmake\\platforms.cmake"
+  ],
+  "cleanCommands": [
+    "F:\\AndroidSDK\\cmake\\3.10.2.4988404\\bin\\ninja.exe -C \"C:\\Users\\xiang\\Desktop\\n\\AIBeauty\\sdk\\.cxx\\cmake\\release\\x86\" clean"
+  ],
+  "buildTargetsCommand": "F:\\AndroidSDK\\cmake\\3.10.2.4988404\\bin\\ninja.exe  -C \"C:\\Users\\xiang\\Desktop\\n\\AIBeauty\\sdk\\.cxx\\cmake\\release\\x86\" {LIST_OF_TARGETS_TO_BUILD}",
+  "libraries": {
+    "opencv_jni_shared-Release-x86": {
+      "artifactName": "opencv_jni_shared",
+      "buildCommand": "F:\\AndroidSDK\\cmake\\3.10.2.4988404\\bin\\ninja.exe -C \"C:\\Users\\xiang\\Desktop\\n\\AIBeauty\\sdk\\.cxx\\cmake\\release\\x86\" opencv_jni_shared",
+      "abi": "x86",
+      "output": "C:\\Users\\xiang\\Desktop\\n\\AIBeauty\\sdk\\.cxx\\cmake\\release\\x86\\libopencv_jni_shared.a",
+      "runtimeFiles": []
+    }
+  }
+}

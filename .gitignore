@@ -1,0 +1,8 @@
+*.so
+*.pt
+*.apk
+*.a
+*.aar
+.git/*
+build/*
+build

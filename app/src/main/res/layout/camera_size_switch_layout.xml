@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal" android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="#80000000">
+    <ImageView
+        android:id="@+id/camera_size_1_1"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:src="@drawable/preview_radio_1_1_white"
+        />
+    <ImageView
+        android:id="@+id/camera_size_4_3"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:src="@drawable/preview_radio_4_3_white"
+        />
+    <ImageView
+        android:id="@+id/camera_size_16_9"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:src="@drawable/preview_radio_16_9_white"
+        />
+    <ImageView
+        android:id="@+id/camera_size_full"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:src="@drawable/preview_radio_full"
+        />
+</LinearLayout>

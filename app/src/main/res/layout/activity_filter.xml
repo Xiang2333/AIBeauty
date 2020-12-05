@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <RelativeLayout
+        android:id="@+id/filter_up"
+        android:padding="20dp"
+        android:layout_alignParentTop="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <Button
+            android:layout_alignParentLeft="true"
+            android:background="@drawable/btn_back"
+            android:id="@+id/filter_act_goBack"
+            android:layout_width="30dp"
+            android:layout_height="30dp"/>
+        <Button
+            android:layout_alignParentRight="true"
+            android:background="@drawable/save"
+            android:id="@+id/filter_act_ok"
+            android:layout_width="30dp"
+            android:layout_height="30dp"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_above="@id/filter_recy"
+        android:layout_below="@id/filter_up"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        >
+        <jp.co.cyberagent.android.gpuimage.GPUImageView
+            android:layout_centerInParent="true"
+            android:id="@+id/gpuimageview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:gpuimage_show_loading="false"
+            app:gpuimage_surface_type="texture_view" />
+    </RelativeLayout>
+    <androidx.recyclerview.widget.RecyclerView
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/filter_recy"/>
+</RelativeLayout>

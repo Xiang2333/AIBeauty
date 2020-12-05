@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--七个功能对应的按钮-->
+    <item name="heightButton" type="id"/>
+    <item name="slimButton" type="id"/>
+    <item name="shoulderButton" type="id"/>
+    <item name="hipButton" type="id"/>
+    <item name="chestButton" type="id"/>
+    <item name="headButton" type="id"/>
+    <item name="freeButton" type="id"/>
+    <!--身高功能的按钮组 退出 显示功能名 保存-->
+    <item name="heightButtons" type="id"/>
+    <!--瘦身功能的按钮组 退出 显示功能名 保存-->
+    <item name="silmButtons" type="id"/>
+    <!--瘦身功能的三个SeekBar-->
+    <item name="armBar" type="id"/>
+    <item name="waistBar" type="id"/>
+    <item name="lagBar" type="id"/>
+    <!--肩颈功能的三个SeekBar-->
+    <item name="widthBar" type="id"/>
+    <item name="rightAngleBar" type="id"/>
+    <item name="swanBar" type="id"/>
+    <item name="shoulderButtons" type="id"/>
+
+    <item name="hipButtons" type="id"/>
+    <item name="chestButtons" type="id"/>
+    <item name="headButtons" type="id"/>
+
+    <item name="freeChangeButtons" type="id"/>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-1544762243/AIBeauty.iml" filepath="$PROJECT_DIR$/.idea/modules/-1544762243/AIBeauty.iml" group="AIBeauty" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/262086031/app.iml" filepath="$PROJECT_DIR$/.idea/modules/262086031/app.iml" group="AIBeauty/app" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-874769197/magicfilter.iml" filepath="$PROJECT_DIR$/.idea/modules/-874769197/magicfilter.iml" group="AIBeauty/magicfilter" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ucrop.iml" filepath="$PROJECT_DIR$/.idea/modules/ucrop.iml" group="AIBeauty/ucrop" />
+    </modules>
+  </component>
+</project>

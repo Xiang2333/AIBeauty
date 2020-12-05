@@ -1,0 +1,340 @@
+package com.bupt.aibeauty.integrate;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class ConIAfflineS {
+    /*公共数据*/
+    public int[][] p;
+    public int[][] q;
+    public int height;
+    public int width;
+    public OperatorS operator;
+    int ctrl;
+
+    ExecutorService executorService;
+
+    /*执行单元数据*/
+    DeformUnit[] deformUnit;
+    public static int unitNum = 11;
+    public static int defaultSize = 33;
+
+    public class DeformUnit implements Runnable {
+        float[] point;
+        protected float[] w;
+        protected float[] pstar;
+        protected float[][][] mul_left;
+        protected float[] vpstar;
+        protected float[][] mul_right;
+        protected float[] qstar;
+        protected float[][] qhat;
+        float[][] qhat_A;
+        float[] qhat_A_0;
+        float [][] A ;
+        private byte [] color;
+        private int [] color11 ;
+        private int [] color12 ;
+        private int [] color21 ;
+        private int [] color22 ;
+        public int channels;
+        public int finalI;
+        public CountDownLatch latch;
+        public DeformUnit(int channels,int defaultSize,int i){
+            this.finalI = i;
+            this.channels = channels;
+            this.color = new byte[channels];
+            this.color11 = new int[channels];
+            this.color12 = new int[channels];
+            this.color21 = new int[channels];
+            this.color22 = new int[channels];
+
+            w = new float[defaultSize];
+            pstar = new float[2];
+            mul_left = new float[defaultSize][2][2];
+            vpstar = new float[2];
+            mul_right = new float[2][2];
+            qstar  = new float[2];
+            qhat = new float[defaultSize][2];
+            qhat_A =new float[defaultSize][2];
+            qhat_A_0 = new float[2];
+            A = new float[2][2];
+            point = new float[2];
+        }
+
+        public void afflinePointf(int y, int x,int[][]p,int[][]q, float[] point) {
+
+            //前处理，应当放置于矩阵之外
+            //计算w
+            //计算p_start
+
+            pstar[0] =0; pstar[1]=0;
+            qhat_A_0[0] =0;
+            qhat_A_0[1] =0;
+
+
+            //qhat_A_0 = new float[2];
+
+
+            float sum_w =0;//[2]
+            {
+                for(int i =0; i<ctrl; i++){
+                    if(p[i][0] == x && p[i][1] == y){
+                        point[1] = p[i][1];
+                        point[0] = p[i][0];
+                        return;
+                    }
+                    w[i]  =(float) (1/Math.sqrt((double) ((p[i][0] - x)*(p[i][0] - x)+(p[i][1] - y)*(p[i][1] - y))));
+                    if(p[i][0] == 0)
+                        pstar[0] += 0;
+                    else
+                        pstar[0] += p[i][0]*w[i];
+                    pstar[1] += p[i][1]*w[i];
+                    sum_w+=w[i];
+                }
+                pstar[0] =pstar[0]/sum_w;
+                pstar[1] =pstar[1]/sum_w;
+
+            }
+            //[ctrl][2][2]
+            for(int i=0; i< ctrl;i++){
+                mul_left[i][0][0] = p[i][0] - pstar[0] ;
+                mul_left[i][0][1] = p[i][1] - pstar[1];
+                mul_left[i][1][0] = p[i][1] - pstar[1];
+                mul_left[i][1][1] = -p[i][0] + pstar[0];
+            }
+
+            //v-p*
+
+            //因为太短这里就不写循环了
+            vpstar[0] = x-pstar[0];
+            vpstar[1] = y-pstar[1];
+
+            {
+                //因为元素比较少，所以直接选择赋值了
+                mul_right[0][0]=vpstar[0];
+                mul_right[0][1]=vpstar[1];
+                mul_right[1][0]=vpstar[1];
+                mul_right[1][1]=-vpstar[0];
+            }
+            //q
+            //[ctrl,2]
+            {
+                qstar[0] =0;
+                qstar[1] =0;
+                for(int i =0; i < ctrl; i++){
+                    qstar[0] +=w[i]*q[i][0];
+                    qstar[1] +=w[i]*q[i][1];
+                }
+                qstar[0] = qstar[0]/sum_w;
+                qstar[1] = qstar[1]/sum_w;
+                for(int i=0; i<ctrl;i++){
+                    qhat[i][0]=q[i][0] - qstar[0];
+                    qhat[i][1]=q[i][1] - qstar[1];
+                }
+            }
+
+
+
+            //qhat与A作矩阵运算[是多组矩阵叠加，不知如何优化]
+
+            for(int i=0; i<ctrl;i++){
+                A[0][0]=w[i]*(mul_left[i][0][0]*mul_right[0][0]+mul_left[i][0][1]*mul_right[1][0]) ;
+                A[0][1]=w[i]*(mul_left[i][0][0]*mul_right[0][1]+mul_left[i][0][1]*mul_right[1][1])  ;
+                A[1][0]=w[i]*(mul_left[i][1][0]*mul_right[0][0]+mul_left[i][1][1]*mul_right[1][0])  ;
+                A[1][1]=w[i]*(mul_left[i][1][0]*mul_right[0][1]+mul_left[i][1][1]*mul_right[1][1])  ;
+                qhat_A[i][0] = qhat[i][0]*A[0][0] +qhat[i][1]*A[1][0];
+                qhat_A[i][1] = qhat[i][0]*A[0][1] +qhat[i][1]*A[1][1];
+                qhat_A_0[0] +=qhat_A[i][0];
+                qhat_A_0[1] +=qhat_A[i][1];
+            }
+            //对qhat_A_0求范数
+            float norm_qhat_A = (float)Math.sqrt(qhat_A_0[0]*qhat_A_0[0] + qhat_A_0[1]*qhat_A_0[1]);
+            float nor_vpstar = (float)Math.sqrt(vpstar[0]*vpstar[0]+vpstar[1]*vpstar[1]);
+
+            point[0] = (qhat_A_0[0]*nor_vpstar/norm_qhat_A+qstar[0]);
+            point[1] = (qhat_A_0[1]*nor_vpstar/norm_qhat_A+qstar[1]);
+
+            //截断
+
+            if(point[0]<0 )
+                point[0] =0;
+            if(point[0]>height-1)
+                point[0] =height-2;
+            if(point[1]<0 )
+                point[1] =0;
+            if(point[1]>width-1)
+                point[1] = width -2;
+
+
+        }
+
+        public void insertValue(double x, double y, byte[] color, OperatorS operator){
+            if(color == null) return;
+            double x1 = Math.floor(x);
+            double y1 = Math.floor(y);
+
+            double x2 = Math.min(x1 +1,width-1);
+            double y2 = Math.min(y1 +1,height-1);
+
+
+            double k11 = (x2-x)/(x2-x1);
+            double k12 = (x-x1)/(x2-x1);
+            double k31 = (y2-y)/(y2-y1);
+            double k32 = (y-y1)/(y2-y1);
+            color11 = operator.getOriginValue((int) x1,(int) y1,this.color11);
+            color12 = operator.getOriginValue((int) x1,(int) y2,this.color12);
+            color21 = operator.getOriginValue((int) x2,(int) y1,this.color21);
+            color22 = operator.getOriginValue((int) x2,(int) y2,this.color22);
+
+
+            for(int i=0; i < channels;i++){
+
+                double r1,r2;
+                if(x == x1){
+                    r1 = color11[i];
+                    r2 = color12[i];
+                }
+                else{
+                    r1 = (color11[i]*k11 + color21[i]*k12);
+                    r2 = (color12[i]*k11 + color22[i]*k12);
+                }
+                if(y == y1){
+                    color[i] = (byte) r1;
+                }else{
+                    color[i] = (byte)(k31*r1 + k32* r2);
+                }
+            }
+        }
+
+        public void setValue(int x, int y, byte[] color){
+            for(int i=0 ; i< channels; i++)
+                operator.setDeformValue(x,y,i,color[i]);
+        }
+
+        @Override
+        public void run() {
+            int segHeih = height/unitNum;
+            int beign = finalI*segHeih;
+            if(beign == 0 ) beign = 2;
+            int end = Math.min((finalI+1)*segHeih, height-2);
+                    for(int y = beign; y  < end; y++ ){
+                        for(int x=2; x< width-2; x++){
+                            deformUnit[finalI].afflinePointf(x,y,p,q,deformUnit[finalI].point);
+                            deformUnit[finalI].insertValue(deformUnit[finalI].point[1],deformUnit[finalI].point[0],deformUnit[finalI].color,operator);
+                            deformUnit[finalI].setValue(x,y,deformUnit[finalI].color);
+                        }
+                    }
+                    latch.countDown();
+        }
+
+        public void setLatch(CountDownLatch latch){
+            this.latch = latch;
+        }
+    }
+
+    public ConIAfflineS(int[][] p, int[][] q, int height, int width, OperatorS operator){
+        this(height,width,operator);
+        this.setP(p);
+        this.setQ(q);
+        ctrl = p.length;
+    }
+
+    public ConIAfflineS(int height, int width, OperatorS operator) {
+        this.width =width;
+        this.height = height;
+        this.operator = operator;
+
+
+        //翻转
+        this.p = new int[defaultSize][2];
+        this.q = new int[defaultSize][2];
+        this.executorService = Executors.newFixedThreadPool(unitNum);
+        this.deformUnit = new DeformUnit[unitNum];
+        for(int i=0; i < unitNum; i++){
+            deformUnit[i] = new DeformUnit(4,defaultSize,i);
+        }
+
+    }
+
+
+    public void changeImage() throws InterruptedException {
+//        CountDownLatch latch = new CountDownLatch(unitNum);
+//        int segHeih = height/unitNum;
+//        for(int i=0; i< unitNum ;i ++){
+//            int finalI = i;
+//            int beign = i*segHeih;
+//            int end = Math.min((i+1)*segHeih, height);
+//            executorService.execute(new Runnable() {
+//                @Override
+//                public void run() {
+//                    for(int y = beign; y  < end; y++ ){
+//                        for(int x=0; x< width; x++){
+//                            deformUnit[finalI].afflinePointf(x,y,p,q,deformUnit[finalI].point);
+//                            deformUnit[finalI].insertValue(deformUnit[finalI].point[1],deformUnit[finalI].point[0],deformUnit[finalI].color,operator);
+//                            deformUnit[finalI].setValue(x,y,deformUnit[finalI].color);
+//                        }
+//                    }
+//
+//                    latch.countDown();
+//                }
+//            });
+//        }
+//        latch.await();
+        CountDownLatch latch = new CountDownLatch(unitNum);
+        for(int i=0; i< unitNum; i++){
+            deformUnit[i].setLatch(latch);
+            executorService.execute(deformUnit[i]);
+        }
+        latch.await();
+
+    }
+
+    public void changeImage(int[][] p, int[][]q) throws InterruptedException {
+        this.setPQ(p,q);
+        this.changeImage();
+
+    }
+
+    public Object getDeformImg(){
+        this.operator.saveChange();
+        return this.operator.getDeformImg();
+    }
+
+    private void setP(int[][] p){
+        for(int i=0; i < p.length; i++){
+            this.q[i][0]= p[i][1];
+            this.q[i][1]= p[i][0];
+        }
+    }
+
+    private void setQ(int[][] q){
+        for(int i=0; i < q.length; i++){
+            this.p[i][0]= q[i][1];
+            this.p[i][1]= q[i][0];
+        }
+    }
+
+    public void setPQ(int[][] p, int[][] q){
+        this.setP(p);
+        this.setQ(q);
+        this.ctrl = p.length;
+    }
+
+    public boolean warpable(){
+        if(p.length != q.length)
+            return false;
+        if(p.length != ctrl)
+            ctrl = p.length;
+        for(int i=0; i < ctrl; i++){
+            if(p[i][0]>= height || p[i][0] < 0) return false;
+            if(p[i][1]>= width || p[i][1] < 0) return false;
+            if(p[i][0]>= height || p[i][0] < 0) return false;
+            if(q[i][1]>= width || q[i][1] < 0) return false;
+
+        }
+        return true;
+    }
+
+
+}
