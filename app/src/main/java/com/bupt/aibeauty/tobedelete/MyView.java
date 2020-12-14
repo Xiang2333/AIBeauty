@@ -1,4 +1,4 @@
-package com.bupt.aibeauty.view;
+package com.bupt.aibeauty.tobedelete;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -20,6 +20,7 @@ import com.bupt.aibeauty.utils.BitmapUtils;
 import com.bupt.aibeauty.utils.ImageTransformUtils;
 import com.bupt.aibeauty.utils.SlimUtils;
 import com.bupt.aibeauty.utils.ViewUtils;
+import com.bupt.aibeauty.view.MySeekBar;
 
 import java.util.LinkedList;
 
@@ -384,18 +385,6 @@ public class MyView extends View {
     private void undo(){
         if(operatorList.size()<=0){
             ((ImageView)back).setImageBitmap(origin);
-            if(MODE==BUTTONMODE){
-                BitmapUtils.deformBitmap=null;
-                for(MySeekBar seekBar:ViewUtils.slimSeekBar){
-                    if(seekBar.style==MySeekBar.DEFAULT_STYLE){
-                        seekBar.setProgress(seekBar.getMinValue());
-                    }else{
-                        seekBar.setProgress(0);
-                    }
-                }
-                SlimUtils.clear();
-            }
-
         }else{
             ((ImageView)back).setImageBitmap(operatorList.removeLast());
         }
@@ -490,6 +479,8 @@ public class MyView extends View {
         this.freeModeCircleR=(int)(this.defaultFreeModeCircleR*percent);
         this.invalidate();
     }
+
+
     public void setLine1Location(double location){
         y1= (int) (back.getTop()+back.getHeight()*location);
     }

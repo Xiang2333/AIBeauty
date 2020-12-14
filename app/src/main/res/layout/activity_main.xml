@@ -75,7 +75,7 @@
             <RelativeLayout
                 android:layout_margin="10dp"
                 android:id="@+id/index_filter"
-                android:background="@drawable/btn_index_other1"
+                android:background="@drawable/btn_index_filter"
                 android:layout_width="150dp"
                 android:layout_height="100dp">
                 <ImageView
@@ -97,7 +97,7 @@
             <RelativeLayout
                 android:layout_margin="10dp"
                 android:id="@+id/index_cut"
-                android:background="@drawable/btn_index_other1"
+                android:background="@drawable/btn_index_crop"
                 android:layout_width="150dp"
                 android:layout_height="100dp">
                 <ImageView

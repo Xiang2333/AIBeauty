@@ -3,16 +3,16 @@ package com.bupt.aibeauty.utils;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Point;
-import android.graphics.drawable.BitmapDrawable;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
-import com.bupt.aibeauty.R;
-import com.bupt.aibeauty.integrate.BonePoint;
-import com.bupt.aibeauty.integrate.ProfilePoint;
+import com.bupt.aibeauty.integrate.ProfilePointCOCO;
+import com.bupt.aibeauty.task.POSELoadTask;
+import com.bupt.aibeauty.task.POSERunner;
+import com.bupt.aibeauty.task.U2NETLoadTask;
+import com.bupt.aibeauty.task.U2NETRunner;
 
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -24,11 +24,6 @@ import org.pytorch.Module;
 import org.pytorch.Tensor;
 import org.pytorch.torchvision.TensorImageUtils;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -36,7 +31,6 @@ import java.util.List;
 import static com.bupt.aibeauty.utils.BitmapUtils.scaleBitmap;
 
 public class ModelUtils {
-    public static Context context=null;
     private static Module u2net=null;
     private static Module pose=null;
     private static boolean u2netLoadFin=false;
@@ -46,23 +40,81 @@ public class ModelUtils {
     private static int keyPointsNum = 18;
     private static int[] POSE_COCO_PAIRS = { 1, 2, 1, 5, 2, 3, 3, 4, 5, 6, 6, 7, 1, 8, 8, 9, 9, 10, 1, 11, 11, 12, 12, 13, 1, 0, 0, 14, 14, 16, 0, 15, 15, 17, 2, 16, 5, 17};
     private static int[] POSE_COCO_MAP_IDX = { 31, 32, 39, 40, 33, 34, 35, 36, 41, 42, 43, 44, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 47, 48, 49, 50, 53, 54, 51, 52, 55, 56, 37, 38, 45, 46};
+    private static Bitmap mask=null;
+    private static List<Point> bonePoints=null;
+    private static ProfilePointCOCO profilePoint=null;
 
-    public static ProfilePoint getProfilePoint(Bitmap bitmap){
-        //Bitmap mask=runU2net(bitmap);
-        return new ProfilePoint(getMask(bitmap),getBonePoint(bitmap));
+    public static void loadModels(Context context){
+        new U2NETLoadTask(context).execute();
+        new POSELoadTask(context).execute();
     }
 
-    public static Bitmap getMask(Bitmap bitmap){
-        return ((BitmapDrawable)context.getDrawable(R.drawable.mask_5)).getBitmap();
+    public static void setU2net(Module u2net){
+        if(u2net!=null){
+            ModelUtils.u2net=u2net;
+            ModelUtils.u2netLoadFin=true;
+            if(modelPrepareFin()&& ViewUtils.dialog!=null){
+                ViewUtils.dialog.dismiss();
+            }
+        }
     }
-    public static int[][] getBonePoint(Bitmap bitmap){
-        return BonePoint.example_5;
+
+    public static void setPose(Module pose){
+        if(pose!=null){
+            ModelUtils.pose=pose;
+            ModelUtils.openposeLoadFin=true;
+            if(modelPrepareFin()&& ViewUtils.dialog!=null){
+                ViewUtils.dialog.dismiss();
+            }
+        }
+    }
+    public static void setMask(Bitmap m){
+        if(m!=null){
+            ModelUtils.mask=m;
+            u2netRunFin=true;
+            if(modelPrepareFin()&&ViewUtils.dialog!=null){
+                ViewUtils.dialog.dismiss();
+                if(profilePoint==null){
+                    profilePoint=new ProfilePointCOCO(getMask(),getBonePoint());
+                }
+            }
+        }
+    }
+    public static void setPointList(List<Point> list){
+        if(list!=null){
+            ModelUtils.bonePoints=list;
+            openposeRunFin=true;
+            if(modelPrepareFin()&&ViewUtils.dialog!=null){
+                ViewUtils.dialog.dismiss();
+                if(profilePoint==null){
+                    profilePoint=new ProfilePointCOCO(getMask(),getBonePoint());
+                }
+            }
+        }
+    }
+    public static void runModels(Bitmap bitmap){
+        new U2NETRunner().execute(bitmap);
+        new POSERunner().execute(bitmap);
+    }
+
+    public static ProfilePointCOCO getProfilePoint(){
+        return profilePoint;
+    }
+
+    private static Bitmap getMask(){
+        return mask;
+    }
+    private static int[][] getBonePoint(){
+        int[][] p=new int[bonePoints.size()][2];
+        for(int i=0;i<p.length;i++){
+            p[i][0]=bonePoints.get(i).x;
+            p[i][1]=bonePoints.get(i).y;
+        }
+        return p;
     }
 
     public static Bitmap runU2net(Bitmap input){
-        if(u2net==null){
-            new U2NETLoadTask().execute();
-        }
+
         if(input==null){
             return null;
         }
@@ -118,9 +170,6 @@ public class ModelUtils {
     }
     @RequiresApi(api = Build.VERSION_CODES.N)
     public static List<Point> runPose(Bitmap input){
-        if(pose==null){
-            new POSELoadTask().execute();
-        }
         if(input==null){
             return null;
         }
@@ -259,105 +308,7 @@ public class ModelUtils {
         }
         return bonePoints;
     }
-    private static String assetFilePath(Context context, String assetName) throws IOException {
-        File file = new File(context.getFilesDir(), assetName);
-        if (file.exists() && file.length() > 0) {
-            return file.getAbsolutePath();
-        }
-        try (InputStream is = context.getAssets().open(assetName)) {
-            try (OutputStream os = new FileOutputStream(file)) {
-                byte[] buffer = new byte[4 * 1024];
-                int read;
-                while ((read = is.read(buffer)) != -1) {
-                    os.write(buffer, 0, read);
-                }
-                os.flush();
-            }
-            return file.getAbsolutePath();
-        }
-    }
-    private static void loadU2NET(){
-        try {
-            u2net=Module.load(assetFilePath(context, "u2net.pt"));
-        } catch (Exception e) {
-            Log.e("loadModel",e.toString());
-        }
-    }
-    private static void loadPOSE(){
-        try {
-            pose=Module.load(assetFilePath(context, "pose.pt"));
-        } catch (Exception e) {
-            Log.e("loadModel",e.toString());
-        }
-    }
-    public static class POSELoadTask extends AsyncTask<Void,Void,Void>{
-        @Override
-        protected Void doInBackground(Void... voids) {
-            long a=System.currentTimeMillis();
-            loadPOSE();openposeLoadFin=true;
-            if(modelPrepareFin()&&ViewUtils.dialog!=null){
-                ViewUtils.dialog.dismiss();
-                ViewUtils.dialog=null;
-            }
-            long b=System.currentTimeMillis();
-            Log.d("model","pose loaded takes "+(b-a)+" ms");
-            //Toast.makeText(context,(b-a)+" ", Toast.LENGTH_LONG).show();
-            return null;
-        }
-    }
-    public static class U2NETLoadTask extends AsyncTask<Void,Void,Void>{
-        @Override
-        protected Void doInBackground(Void... voids) {
-            long a=System.currentTimeMillis();
-            loadU2NET();u2netLoadFin=true;
-            if(modelPrepareFin()&&ViewUtils.dialog!=null){
-                ViewUtils.dialog.dismiss();
-                ViewUtils.dialog=null;
-            }
-            long b=System.currentTimeMillis();
-            Log.d("model","u2net loaded takes "+(b-a)+" ms");
-            //Toast.makeText(context,(b-a)+" ",Toast.LENGTH_LONG).show();
-            return null;
-        }
-    }
 
-    public static class U2NETRunner extends AsyncTask<Bitmap,Void,Bitmap>{
-
-        @Override
-        protected Bitmap doInBackground(Bitmap... bitmaps) {
-            long a=System.currentTimeMillis();
-            u2netRunFin=false;
-            Bitmap res=runU2net(bitmaps[0]);
-            u2netRunFin=true;
-            if(modelPrepareFin()&&ViewUtils.dialog!=null){
-                ViewUtils.dialog.dismiss();
-                ViewUtils.dialog=null;
-            }
-            long b=System.currentTimeMillis();
-            Log.d("model","u2net run finish takes "+(b-a)+" ms");
-            //Toast.makeText(context,(b-a)+" ",Toast.LENGTH_LONG).show();
-            return res;
-        }
-    }
-    public static class POSERunner extends AsyncTask<Bitmap,Void,List<Point>>{
-
-        @RequiresApi(api = Build.VERSION_CODES.N)
-        @Override
-        protected List<Point> doInBackground(Bitmap... bitmaps) {
-            long a=System.currentTimeMillis();
-            openposeRunFin=false;
-            List<Point> res=runPose(bitmaps[0]);
-            openposeRunFin=true;
-            if(modelPrepareFin()&&ViewUtils.dialog!=null){
-                ViewUtils.dialog.dismiss();
-                ViewUtils.dialog=null;
-            }
-            long b=System.currentTimeMillis();
-            Log.d("model","openpose run finish takes "+(b-a)+" ms");
-            //Toast.makeText(context,(b-a)+" ",Toast.LENGTH_LONG).show();
-            return res;
-        }
-    }
 
     // 与周围八个像素比较，得出局部极值点
     // nmsOut中的元素为arrayList, 该元素中第一个元素为peak的数目，其余为peak三元组(col, row, score)
@@ -577,19 +528,30 @@ public class ModelUtils {
             }
         }
     }
-    private static boolean modelLoadFin(){
+    public static boolean modelLoadFin(){
         return u2netLoadFin&&openposeLoadFin;
     }
-    private static boolean modelRunFin(){
+    public static boolean modelRunFin(){
         return u2netRunFin&&openposeRunFin;
     }
-
     public static boolean modelPrepareFin(){
         boolean flag=modelLoadFin()&&modelRunFin();
         return flag;
     }
     public static void reRun(){
+        reRunU2NET();
+        reRunPOSE();
+    }
+    public static void reRunU2NET(){
         u2netRunFin=false;
+    }
+    public static void reRunPOSE(){
         openposeRunFin=false;
+    }
+    public static void reset(){
+        reRun();
+        mask=null;
+        bonePoints=null;
+        profilePoint=null;
     }
 }

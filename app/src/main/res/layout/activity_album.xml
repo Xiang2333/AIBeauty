@@ -23,7 +23,7 @@
                 android:adjustViewBounds="true"
                 android:scaleType="centerCrop" />
         </RelativeLayout>
-        <com.bupt.aibeauty.view.MyView
+        <com.bupt.aibeauty.tobedelete.MyView
             android:id="@+id/myview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>

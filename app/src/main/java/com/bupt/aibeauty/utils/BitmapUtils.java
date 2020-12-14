@@ -20,6 +20,7 @@ import android.widget.Toast;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
@@ -75,19 +76,7 @@ public class BitmapUtils {
     }
 
     public static void saveBitmap(Context context,Bitmap bitmap){
-        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES), "AIBeauty");
-        if (!mediaStorageDir.exists()) {
-            mediaStorageDir.mkdirs();
-        }
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINESE).format(new Date());
-        File pictureFile = new File(mediaStorageDir.getPath() + File.separator +
-                "IMG_" + timeStamp + ".jpg");
-        // 首先保存图片
-
-        if (pictureFile.exists()) {
-            pictureFile.delete();
-        }
+        File pictureFile=FileUtils.createFile();
         try {
             FileOutputStream out = new FileOutputStream(pictureFile);
             //90表图像品质  0-100 100表示不压缩
@@ -97,19 +86,8 @@ public class BitmapUtils {
             Toast.makeText(context,"保存成功!",Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Log.e("save",e.toString());
-            //e.printStackTrace();
-            //Toast.makeText(context,e.toString(),Toast.LENGTH_LONG).show();
+
         }
-        // 其次把文件插入到系统图库
-        /*
-        try {
-            MediaStore.Images.Media.insertImage(context.getContentResolver(),
-                    pictureFile.getAbsolutePath(),"IMG_" + timeStamp + ".jpg", null);
-        } catch (Exception e) {
-            Log.e("save",e.toString());
-            //Toast.makeText(context,e.toString(),Toast.LENGTH_LONG).show();
-        }
-        */
 
         // 最后通知图库更新
         ContentValues values = new ContentValues();
@@ -136,17 +114,8 @@ public class BitmapUtils {
         Uri res=null;
         BufferedOutputStream out;
         try {
-            File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_PICTURES), "AIBeautyTemp");
-            if (!mediaStorageDir.exists()) {
-                mediaStorageDir.mkdirs();
-            }
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINESE).format(new Date());
-            File convertFile = new File(mediaStorageDir.getPath() + File.separator +
-                    "IMG_COPY_" + timeStamp + ".jpg");
-
+            File convertFile = FileUtils.createTempFile();
             out = new BufferedOutputStream(new FileOutputStream(convertFile));
-
             if (bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)){
                 out.flush();
                 out.close();

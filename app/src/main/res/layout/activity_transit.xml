@@ -41,29 +41,36 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <Button
-            android:background="@android:color/transparent"
-            android:layout_margin="20dp"
+            android:background="@drawable/btn_transit_all"
+            android:layout_weight="1"
             android:layout_gravity="center"
-            android:text="去修身"
+            android:text="修身"
             android:id="@+id/goSlim"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"/>
         <Button
-            android:background="@android:color/transparent"
-            android:layout_margin="20dp"
+            android:background="@drawable/btn_transit_all"
+            android:layout_weight="1"
             android:layout_gravity="center"
-            android:text="加滤镜"
+            android:text="滤镜"
             android:id="@+id/goFilter"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"/>
         <Button
-            android:background="@android:color/transparent"
-            android:layout_margin="20dp"
+            android:background="@drawable/btn_transit_all"
+            android:layout_weight="1"
             android:layout_gravity="center"
-            android:text="去裁减"
+            android:text="裁减"
             android:id="@+id/goCrop"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"/>
+        <Button
+            android:background="@drawable/btn_transit_all"
+            android:layout_weight="1"
+            android:layout_gravity="center"
+            android:text="分享"
+            android:id="@+id/goShare"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"/>
     </LinearLayout>
-
 </RelativeLayout>

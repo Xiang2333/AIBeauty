@@ -10,6 +10,8 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -19,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bupt.aibeauty.R;
 import com.bupt.aibeauty.adapter.FilterRecyAdapter;
 import com.bupt.aibeauty.utils.FilterUtils;
+import com.bupt.aibeauty.utils.ViewUtils;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -37,7 +40,7 @@ public class FilterActivity extends Activity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_filter);
-        this.context=context;
+        this.context=this;
         initView();
         String img_path=getIntent().getStringExtra("img_path");
         //解析出图像的uri
@@ -46,6 +49,10 @@ public class FilterActivity extends Activity {
         try {
             bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(),uri);
             imageView.setImage(bitmap);
+            ViewGroup.LayoutParams params= imageView.getLayoutParams();
+            params.width= ViewUtils.screenWidth;
+            params.height=params.width*bitmap.getHeight()/bitmap.getWidth();
+            imageView.setLayoutParams(params);
         } catch (Exception e) {
             Log.e("filteracc",e.toString());
         }

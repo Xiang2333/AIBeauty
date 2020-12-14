@@ -7,13 +7,13 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Point;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.PermissionChecker;
 
 import android.os.Environment;
+import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -23,6 +23,7 @@ import android.widget.Toast;
 
 import com.bupt.aibeauty.R;
 import com.bupt.aibeauty.utils.BitmapUtils;
+import com.bupt.aibeauty.utils.FileUtils;
 import com.bupt.aibeauty.utils.ModelUtils;
 import com.bupt.aibeauty.utils.ViewUtils;
 import com.yalantis.ucrop.UCrop;
@@ -52,8 +53,8 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ModelUtils.context=this;
-        loadModel();
+
+        ModelUtils.loadModels(this);
         Point screenSize=new Point();
         getWindowManager().getDefaultDisplay().getRealSize(screenSize);
         ViewUtils.screenHeight=screenSize.y;ViewUtils.screenWidth=screenSize.x;
@@ -133,7 +134,7 @@ public class MainActivity extends Activity {
             //data.getDate()获取图片uri，保存其字符串形式
             intent.putExtra("img_path",data.getData().toString());
             startActivity(intent);
-        }else if(requestCode==MainActivity.SYSTEMCAMERA&& resultCode == RESULT_OK&&null!=data){
+        }else if(requestCode==MainActivity.SYSTEMCAMERA&& resultCode == RESULT_OK){
             Log.d("main","take photo over");
             Log.d("main",uri.toString());
             Intent intent=new Intent();
@@ -190,15 +191,13 @@ public class MainActivity extends Activity {
     private void startActivity(int id) {
         switch (id) {
             case R.id.index_camera:
-                //startActivity(new Intent(this, CameraActivity.class));
-                Intent openCameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); //系统常量， 启动相机的关键
-                String f = System.currentTimeMillis()+".jpg";
-                File dir = new File(Environment.getExternalStoragePublicDirectory(
-                        Environment.DIRECTORY_PICTURES), "AIBeautyTemp");
-                if(!dir.exists()){
-                    dir.mkdir();
+                StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+                StrictMode.setVmPolicy(builder.build());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    builder.detectFileUriExposure();
                 }
-                Uri fileUri = Uri.fromFile(new File(dir.getPath()+"/"+f));
+                Intent openCameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); //系统常量， 启动相机的关键
+                Uri fileUri = Uri.fromFile(FileUtils.createTempFile());
                 this.uri=fileUri;
                 openCameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri); //指定图片存放位置，指定后，在onActivityResult里得到的Data将为null
                 startActivityForResult(openCameraIntent, SYSTEMCAMERA);
@@ -249,21 +248,4 @@ public class MainActivity extends Activity {
             mImageView.setImageResource(data);
         }
     }
-    private static void loadModel(){
-        long a=System.currentTimeMillis(),b=0,c=0;
-        AsyncTask<Void,Void,Void> task1=new ModelUtils.U2NETLoadTask().execute();
-        AsyncTask<Void,Void,Void> task2=new ModelUtils.POSELoadTask().execute();
-        /*
-        try {
-            task1.get();
-            b=System.currentTimeMillis();
-            task2.get();
-            c=System.currentTimeMillis();
-        } catch (Exception e) {
-            Log.e("main",e.toString());
-        }
-        Toast.makeText(ModelUtils.context,"model load takes "+(Math.max(b,c)-a)+" ms",Toast.LENGTH_LONG).show();
-         */
-    }
-
 }

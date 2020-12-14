@@ -1,39 +1,32 @@
 package com.bupt.aibeauty.integrate;
 
+
+
 import android.graphics.Bitmap;
+
+
 import java.util.ArrayList;
 
-public class ProfilePoint {
+public class ProfilePointCOCO {
 
     /*常量*/
-    //左上臂
-    public static int LUARM = 1;
-    //左下臂
-    public static int LFARM = 2;
-    //右上臂
+    public static int LUARM = 2;
+    public static int LFARM = 3;
     public static int RUARM = 5;
-    //右下臂
     public static int RFARM = 6;
-    //左大腿
-    public static int LTHIGH = 9;
-    //左小腿
-    public static int LSHANK =10;
-    //右大腿
+
+    public static int LTHIGH = 8;
+    public static int LSHANK = 9;
     public static int RTHIGH =11;
-    //右小腿
     public static int RSHANK =12;
 
-    //左臂
     public static int LARM =1;
-    //右臂
     public static int RARM =5;
-    //左腿
+
     public static int LLEG =9;
-    //右腿
     public static int RLEG =11;
 
     /*构造边缘点的默认给定间距*/
-    //public static int gap = 3;
     public static int gap = 3;
     public static float alpha = (float) 1.2;
 
@@ -49,8 +42,7 @@ public class ProfilePoint {
 
 
     /*点位说明
-     * [一侧/骨骼线/一侧][numpoint][2]
-     * 某一点可能会为Null,原因是属于异常点
+     * [一侧/骨骼线/一侧][index][2]
      * */
     private int[][][] leftArm;
     private int[][][] rightArm;
@@ -62,7 +54,7 @@ public class ProfilePoint {
 
     public float waistScale = (float)0.7;//腰部从胸口到档部在的位置
 
-    public ProfilePoint(Bitmap profileImage,int[][] bonePoint){
+    public ProfilePointCOCO(Bitmap profileImage, int[][] bonePoint){
         this.bonePoint = bonePoint;
         this.pointSet = genPointSet(bonePoint);
 
@@ -85,9 +77,9 @@ public class ProfilePoint {
         if(this.waist[0] == null && this.waist[1] == null) {
             waist[0] = new int[2];
             waist[1] = new int[2];
-            //1是胸口，8是档部
-            int m_0 = (bonePoint[1][0] + bonePoint[8][0]) / 2;
-            int m_1 = bonePoint[1][1] + (int) (waistScale * (bonePoint[8][1] - bonePoint[1][1]));
+            //1是胸口，COCO 没有档部的点，所以这里用左大腿和右大腿处的点生成
+            int m_0 = (bonePoint[1][0] + (bonePoint[8][0]+bonePoint[11][0])/2) / 2;
+            int m_1 = bonePoint[1][1] + (int) (waistScale * ((bonePoint[8][1]+bonePoint[11][1])/2 - bonePoint[1][1]));
 
             //查找图像左侧
             for (int i = m_0; i >= 0; i = i - 1) {
@@ -168,12 +160,15 @@ public class ProfilePoint {
         /*聚类*/
         lBool = clusterPoint(tar[0],this.pointSet,limbNum+1);
         rBool = clusterPoint(tar[2],this.pointSet,limbNum+1);
-        for(int i = pointNum; i < m.size(); i++){
-            if(!lBool[i])
+        for(int i = pointNum; i < lBool.length; i++) {
+            if (!lBool[i])
                 tar[0][i] = null;
+        }
+        for(int i= pointNum; i< rBool.length; i++){
             if(!rBool[i])
                 tar[2][i] = null;
         }
+
 
         return;
     }
@@ -195,7 +190,7 @@ public class ProfilePoint {
     }
 
     public int[][][] getLeftLeg(int pointNum){
-        if(this.leftLeg[0]== null && this.leftLeg[1]== null && this.leftLeg[2]== null)
+        if(this.leftLeg[0]== null && this.leftLeg[0]== null && this.leftLeg[0]== null)
             this.genLimbPoint(LLEG,pointNum);
         return this.leftLeg;
     }
@@ -222,6 +217,7 @@ public class ProfilePoint {
              result[2] 骨骼点, 数量:numPoint
     * */
     private ArrayList [] getIntersection(int[] p , int[] q,boolean leftFlag, boolean rightFlag, int pointNum,int gapDistance,float alpha){
+
         int[] direct = {q[0] - p[0], q[1] - p[1]};
         int sec_0 = direct[0]/(pointNum+1);
         int sec_1 = direct[1]/(pointNum+1);
@@ -237,6 +233,15 @@ public class ProfilePoint {
         result[0] = s;
         result[1] = d;
         result[2] = m;
+
+        if(p[0]<0 || q[0]<0 || p[1]<0 || q[1]<0){
+            for(int i=0; i< pointNum; i++){
+                s.add(new int[]{-1,-1});
+                m.add(new int[]{-1,-1});
+                d.add(new int[]{-1,-1});
+            }
+        }
+
 
 
         //斜率不存在
@@ -463,13 +468,17 @@ public class ProfilePoint {
         for(int i = 0; i < points.length; i++){
             float minDistance = -1;
             int minIndex = -1;
-            if(points[i] == null){
+            if(points[i] == null || points[i][0] <0 || points[i][1] <0){
                 realIndex[i] = false;
                 continue;
             }
             for(int j =0; j < pointSet.length; j++){
                 float d1 = distance(points[i],pointSet[j][0]);
                 float d2 = distance(points[i],pointSet[j][1]);
+
+                float m = distance(pointSet[j][0],pointSet[j][1]);
+
+
                 distanceMatrix[i][j] = d1 + d2;
                 if(minDistance == -1){
                     minDistance = distanceMatrix[i][j];
@@ -511,10 +520,10 @@ public class ProfilePoint {
         result[6] = new int[][]{bonePoint[6],bonePoint[7]};
         result[7] = new int[][]{bonePoint[2],bonePoint[9]};
         result[8] = new int[][]{bonePoint[5],bonePoint[12]};
-        result[9] = new int[][]{bonePoint[9],bonePoint[10]};
-        result[10] = new int[][]{bonePoint[10],bonePoint[11]};
-        result[11] = new int[][]{bonePoint[12],bonePoint[13]};
-        result[12] = new int[][]{bonePoint[13],bonePoint[14]};
+        result[LLEG] = new int[][]{bonePoint[LTHIGH],bonePoint[LSHANK]};
+        result[LLEG+1] = new int[][]{bonePoint[LSHANK],bonePoint[LSHANK+1]};
+        result[RLEG] = new int[][]{bonePoint[RTHIGH],bonePoint[RSHANK]};
+        result[RLEG+1] = new int[][]{bonePoint[RSHANK],bonePoint[RSHANK+1]};
         return result;
     }
 }

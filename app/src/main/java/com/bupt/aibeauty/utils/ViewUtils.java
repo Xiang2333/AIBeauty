@@ -12,15 +12,4 @@ public class ViewUtils {
     public static int screenWidth;
     public static ImageView imageView;
     public static AlertDialog dialog;
-    public static ArrayList<MySeekBar> slimSeekBar=new ArrayList<>();
-    public static boolean flag=false;
-    public static void clearAll(){
-        if(imageView!=null){
-            imageView=null;
-        }
-        if(slimSeekBar!=null){
-            slimSeekBar.clear();
-            slimSeekBar=null;
-        }
-    }
 }

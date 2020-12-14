@@ -6,16 +6,22 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
+import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.core.content.FileProvider;
+
 import com.bupt.aibeauty.R;
+import com.bupt.aibeauty.utils.FileUtils;
+import com.bupt.aibeauty.utils.ViewUtils;
 import com.yalantis.ucrop.UCrop;
 
 import java.io.BufferedInputStream;
@@ -23,17 +29,15 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 
 
 public class TransitActivity extends Activity {
-
+    private static int SHARE=100;
     private ImageView imageView;
     private Button goSlim;
     private Button goFilter;
     private Button goCrop;
+    private Button goShare;
 
     private Button goBack;
     private Button ok;
@@ -42,12 +46,11 @@ public class TransitActivity extends Activity {
     private Context context;
     private Uri uri;
     private boolean fromCrop=false;
+    private boolean fromCamera=false;
     private Uri origin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_transit);
         context=this;
@@ -58,11 +61,18 @@ public class TransitActivity extends Activity {
             fromCrop=true;
             this.origin=Uri.parse(getIntent().getStringExtra("origin_path"));
         }
+        if("camera".equals(from)){
+            fromCamera=true;
+        }
         //解析出图像的uri
         uri=Uri.parse(img_path);
         try {
             Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(),uri);
             imageView.setImageBitmap(bitmap);
+            ViewGroup.LayoutParams params= imageView.getLayoutParams();
+            params.width= ViewUtils.screenWidth;
+            params.height=params.width*bitmap.getHeight()/bitmap.getWidth();
+            imageView.setLayoutParams(params);
             imageView.invalidate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -98,7 +108,7 @@ public class TransitActivity extends Activity {
                 intent.putExtra("img_path",uri.toString());
                 intent.setClass(context,FilterActivity.class);
                 startActivity(intent);
-                finish();
+
             }
         });
 
@@ -117,15 +127,7 @@ public class TransitActivity extends Activity {
                     UCrop uCrop=UCrop.of(origin,uri).withOptions(options);
                     uCrop.start(thisAcc);
                 }else{
-                    File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                            Environment.DIRECTORY_PICTURES), "AIBeautyTemp");
-                    if (!mediaStorageDir.exists()) {
-                        mediaStorageDir.mkdirs();
-                    }
-                    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINESE).format(new Date());
-                    File pictureFile = new File(mediaStorageDir.getPath() + File.separator +
-                            "IMG_CROP" + timeStamp + ".jpg");
-
+                    File pictureFile = FileUtils.createTempFile();
                     UCrop.Options options=new UCrop.Options();
                     options.setFreeStyleCropEnabled(true);
                     options.setCompressionQuality(100);
@@ -135,17 +137,33 @@ public class TransitActivity extends Activity {
             }
         });
 
+        Drawable share=getDrawable(R.drawable.btn_share);
+        share.setBounds(0,0,50,50);
+        goShare=findViewById(R.id.goShare);
+        goShare.setCompoundDrawables(null,share,null,null);
+        goShare.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+                StrictMode.setVmPolicy(builder.build());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    builder.detectFileUriExposure();
+                }
+
+                File shareFile = new File(uri.getPath());
+                Intent intent = new Intent(Intent.ACTION_SEND);
+                intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(shareFile));
+                intent.setType("image/*");
+                startActivityForResult(Intent.createChooser(intent, "分享到"),SHARE);
+            }
+        });
+
+
         goBack=findViewById(R.id.goBack);
         goBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                        Environment.DIRECTORY_PICTURES), "AIBeautyTemp");
-                if (mediaStorageDir.exists()){
-                    for(File file:mediaStorageDir.listFiles()){
-                        file.delete();
-                    }
-                }
+                FileUtils.clearTempDir();
                 ((Activity)context).finish();
             }
         });
@@ -156,14 +174,7 @@ public class TransitActivity extends Activity {
             public void onClick(View view) {
                 try {
                     BufferedInputStream bufIn=new BufferedInputStream(new FileInputStream(new File(uri.getPath())));
-                    File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                            Environment.DIRECTORY_PICTURES), "AIBeauty");
-                    if (!mediaStorageDir.exists()) {
-                        mediaStorageDir.mkdirs();
-                    }
-                    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINESE).format(new Date());
-                    File pictureFile = new File(mediaStorageDir.getPath() + File.separator +
-                            "IMG" + timeStamp + ".jpg");
+                    File pictureFile = FileUtils.createFile();
                     BufferedOutputStream bufOut=new BufferedOutputStream(new FileOutputStream(pictureFile));
 
                     byte[] buf=new byte[10*1024];
@@ -177,13 +188,7 @@ public class TransitActivity extends Activity {
                 } catch (Exception e) {
                     Log.e("transit",e.getMessage());
                 }
-                File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                        Environment.DIRECTORY_PICTURES), "AIBeautyTemp");
-                if (mediaStorageDir.exists()){
-                    for(File file:mediaStorageDir.listFiles()){
-                        file.delete();
-                    }
-                }
+                FileUtils.clearTempDir();
                 Toast.makeText(context,"保存成功！",Toast.LENGTH_SHORT).show();
                 ((Activity)context).finish();
             }
@@ -201,6 +206,8 @@ public class TransitActivity extends Activity {
             } catch (Exception e) {
                 Log.e("transit",e.getMessage());
             }
+        }else if(resultCode==RESULT_OK&&requestCode==SHARE){
+            Log.d("transit","back");
         }
     }
 }
